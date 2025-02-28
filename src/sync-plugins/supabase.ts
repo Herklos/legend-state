@@ -286,8 +286,11 @@ export function syncedSupabase<
         : !actions || actions.includes('create')
           ? async (input: SupabaseRowOf<Client, Collection, SchemaName>, params: SyncedSetParams<TRemote>) => {
                 const { onError } = params;
-                const res = await client.from(collection).insert(input).select();
-                const { data, error } = res;
+                const clientSchema = schema ? client.schema(schema as string) : client;
+                const from = clientSchema.from(collection).insert(input);
+                const insert = selectFn ? selectFn(from) : from.select();
+
+                const { data, error } = await insert;
                 if (data) {
                     const created = data[0];
                     return created;
@@ -310,8 +313,11 @@ export function syncedSupabase<
                 ? wrapSupabaseFn(updateParam, 'update')
                 : async (input: SupabaseRowOf<Client, Collection, SchemaName>, params: SyncedSetParams<TRemote>) => {
                       const { onError } = params;
-                      const res = await client.from(collection).update(input).eq(fieldId, input[fieldId]).select();
-                      const { data, error } = res;
+                      const clientSchema = schema ? client.schema(schema as string) : client;
+                      const from = clientSchema.from(collection).update(input).eq(fieldId, input[fieldId]);
+                      const updateWithSelect = selectFn ? selectFn(from) : from.select();
+
+                      const { data, error } = await updateWithSelect;
                       if (data) {
                           const created = data[0];
                           return created;
@@ -338,8 +344,11 @@ export function syncedSupabase<
                       params: SyncedSetParams<TRemote>,
                   ) => {
                       const { onError } = params;
-                      const res = await client.from(collection).delete().eq(fieldId, input[fieldId]).select();
-                      const { data, error } = res;
+                      const clientSchema = schema ? client.schema(schema as string) : client;
+                      const from = clientSchema.from(collection).delete().eq(fieldId, input[fieldId]);
+                      const deleteWithSelect = selectFn ? selectFn(from) : from.select();
+      
+                      const { data, error } = await deleteWithSelect;
                       if (data) {
                           const created = data[0];
                           return created;
